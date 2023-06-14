@@ -17,12 +17,15 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.chains.router import MultiPromptChain, MultiRouteChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
 from langchain import HuggingFacePipeline
+from langchain.llms import GPT4All
 
 langchain.debug = True
 
 vectordb = Chroma(persist_directory=persist_directory, embedding_function=embedding)
 
 llm = ChatOpenAI(client=None, model="gpt-3.5-turbo", temperature=0) #, max_tokens=3000)
+# llm = GPT4All(model="./models/", backend='gptj', verbose=True) # type: ignore
+
 # GPT4all
 # llm = HuggingFacePipeline.from_model_id(model_id="mosaicml/mpt-7b-instruct", task="text-generation")
 
@@ -117,21 +120,30 @@ chain = MixedMultiRouteChain(
     verbose=True,
 )
 
-while True:
-    print("> ", end="")
-    user_input = input()
-    attempts = 0
-    # llm.temperature = 0
-    while True:
-        try:
-            output = chain.run(user_input)
-            break
-        except Exception as e:
-            attempts += 1
-            # llm.temperature += 0.1
-            if attempts >= 1:
-                raise e
-    print(output)
+import chainlit as cl
+
+@cl.langchain_factory(use_async=True)
+def factory():
+    # prompt = PromptTemplate(template=template, input_variables=["question"])
+    # llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0), verbose=True)
+
+    return chain
+
+# while True:
+#     print("> ", end="")
+#     user_input = input()
+#     attempts = 0
+#     # llm.temperature = 0
+#     while True:
+#         try:
+#             output = chain.run(user_input)
+#             break
+#         except Exception as e:
+#             attempts += 1
+#             # llm.temperature += 0.1
+#             if attempts >= 1:
+#                 raise e
+#     print(output)
 
 # qa.run("What is langchain?")
 # qa.run("And how much is 2 + 2?")

@@ -1,8 +1,10 @@
-python-dotenv==0.21.1
-langchain==0.0.189
-openai==0.27.4
+python-dotenv==1.0.0
+langchain==0.0.198
+openai==0.27.7
 unstructured
 tabulate
 chromadb
 tqdm
 transformers
+gpt4all==0.3.4
+chainlit==0.3.0
