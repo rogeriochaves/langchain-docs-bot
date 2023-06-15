@@ -3,3 +3,4 @@ db
 .chroma
 models
 __pycache__
+.chainlit/.langchain.db

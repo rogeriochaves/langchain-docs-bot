@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,13 +19,14 @@ from langchain.chains.router import MultiPromptChain, MultiRouteChain
 from langchain.chains.router.llm_router import LLMRouterChain, RouterOutputParser
 from langchain import HuggingFacePipeline
 from langchain.llms import GPT4All
+from langchain.schema import BaseOutputParser, OutputParserException
 
 langchain.debug = True
 
 vectordb = Chroma(persist_directory=persist_directory, embedding_function=embedding)
 
-llm = ChatOpenAI(client=None, model="gpt-3.5-turbo", temperature=0) #, max_tokens=3000)
-# llm = GPT4All(model="./models/", backend='gptj', verbose=True) # type: ignore
+# llm = ChatOpenAI(client=None, model="gpt-3.5-turbo", temperature=0) #, max_tokens=3000)
+llm = GPT4All(model="./models/ggml-gpt4all-j-v1.3-groovy.bin", backend="gptj", verbose=True, temp=0.1, n_predict=512)  # type: ignore
 
 # GPT4all
 # llm = HuggingFacePipeline.from_model_id(model_id="mosaicml/mpt-7b-instruct", task="text-generation")
@@ -40,7 +42,7 @@ qa = RetrievalQAWithSourcesChain.from_chain_type(
     llm=llm,
     chain_type="stuff",
     retriever=vectordb.as_retriever(),
-    reduce_k_below_max_tokens=True
+    reduce_k_below_max_tokens=True,
 )
 
 default_template = """You are a very basic chatbot just for triaging, you only engage in small talk, very shallow, like a "hello", "how is it going", but not much more than that.
@@ -66,30 +68,44 @@ default_chain = LLMChain(
 )
 
 
-MULTI_PROMPT_ROUTER_TEMPLATE = """You help triaging user requests. Given a raw text input, output a JSON that classifies the destination as:
+MULTI_PROMPT_ROUTER_TEMPLATE = """You help triaging user requests. Given a raw text input, output either DOCS or DEFAULT, according to those definitions:
 
 DOCS: if user is asking a seemingly technical question, programming questions or company-specific questions
 DEFAULT: if user is just chit-chatting or basic knowledge questions
 
-<< JSON FORMATTING >>
-Return a markdown code snippet with a JSON object formatted to look like:
-```json
-{{{{
-    "destination": string // either "DOCS" or "DEFAULT"
-    "next_inputs": string // the original input
-}}}}
-```
+====================
 
-<< INPUT >>
-{{input}}
+Input: hello there
+Output: DEFAULT
 
-<< OUTPUT (remember to include the ```json)>>"""
+Input: how does langchain work
+Output: DOCS
+
+Input: code example of vector db
+Output: DOCS
+
+Input: what is your name
+Output: DEFAULT
+
+Input: {{input}}
+"""
+
+
+class SimpleRouteParser(BaseOutputParser[Dict[str, str]]):
+    def parse(self, text: str) -> Dict[str, Any]:
+        if "DOCS" in text:
+            return {"destination": "DOCS", "next_inputs": {"question": "hi there"}}
+        elif "DEFAULT" in text:
+            return {"destination": None, "next_inputs": {"question": "hi there"}}
+        else:
+            raise OutputParserException(f"Route DOCS or DEFAULT not found on {text}")
+
 
 router_template = MULTI_PROMPT_ROUTER_TEMPLATE.format()
 router_prompt = PromptTemplate(
     template=router_template,
     input_variables=["input"],
-    output_parser=RouterOutputParser(next_inputs_inner_key="question"),
+    output_parser=SimpleRouteParser(),
 )
 
 router_chain = LLMRouterChain.from_llm(llm, router_prompt)
@@ -122,12 +138,22 @@ chain = MixedMultiRouteChain(
 
 import chainlit as cl
 
-@cl.langchain_factory(use_async=True)
-def factory():
-    # prompt = PromptTemplate(template=template, input_variables=["question"])
-    # llm_chain = LLMChain(prompt=prompt, llm=OpenAI(temperature=0), verbose=True)
+# template = """Question: {question}
 
+# Answer: Let's think step by step."""
+
+# @cl.langchain_factory(use_async=False)
+# def factory():
+#     prompt = PromptTemplate(template=template, input_variables=["question"])
+#     llm_chain = LLMChain(prompt=prompt, llm=llm, verbose=True)
+
+#     return llm_chain
+
+
+@cl.langchain_factory(use_async=False)
+def factory():
     return chain
+
 
 # while True:
 #     print("> ", end="")
