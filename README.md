@@ -30,4 +30,4 @@ chainlit run main.py -w
 
 ## Using a local LLM
 
-In case you don't want to send your data over to OpenAI, you can try to use a local LLM, running even on your CPU with GPT4All. However, in my tests, they had a very bad performance, hardly passing the first chain step. If you want to try anyway, uncomment any of the `GPT4All` lines in `main.py`. Also, you will need to download the models from (gpt4all.io)[https://gpt4all.io/] (for example the ggml-mpt-7b-instruct one), and save them under the `models/` folder.
+In case you don't want to send your data over to OpenAI, you can try to use a local LLM, running even on your CPU with GPT4All. However, in my tests, they had a very bad performance, hardly passing the first chain step. If you want to try anyway, uncomment any of the `GPT4All` lines in `main.py`. Also, you will need to download the models from [gpt4all.io](https://gpt4all.io/) (for example the ggml-mpt-7b-instruct one), and save them under the `models/` folder.

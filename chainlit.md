@@ -1,4 +1,6 @@
-# Welcome to Chainlit! 🚀🤖
+# Welcome to Docs Bot! 🚀🤖
+
+This was built using Langchain and Chainlit, and the rest of the text here is original from Chainlit.
 
 Hi there, Developer! 👋 We're excited to have you on board. Chainlit is a powerful tool designed to help you prototype, debug and share applications built on top of LLMs.
 
